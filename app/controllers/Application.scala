@@ -22,6 +22,8 @@ case class PublicationDate(year: Int, month: Int) {
 class CustomHtmlUnitDriver extends HtmlUnitDriver {
   override def modifyWebClient(client: WebClient): WebClient = {
     val modifiedClient = super.modifyWebClient(client)
+    modifiedClient.getOptions.setCssEnabled(false)
+    modifiedClient.getOptions.setJavaScriptEnabled(false)
     modifiedClient.getOptions.setThrowExceptionOnScriptError(false)
     modifiedClient
   }
@@ -108,7 +110,7 @@ object Application extends Controller {
     val content = new SyndContentImpl()
     content.setType("text/plain")
     content.setValue(article.content.mkString("\n"))
-    entry.setContents(Seq(content))
+    entry.setDescription(content)
     entry
   }
 
@@ -139,7 +141,7 @@ object Application extends Controller {
       )
       .map(articlesToFeed)
     maybeOutput match {
-      case Success(output) => Ok(output)
+      case Success(output) => Ok(output).as("application/rss+xml; charset=utf-8")
       case Failure(ex) => InternalServerError(ex.getMessage)
     }
 
