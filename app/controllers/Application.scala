@@ -28,7 +28,6 @@ object Application extends Controller {
 
   private val driver = new CustomHtmlUnitDriver
   driver.setJavascriptEnabled(true)
-  val browser = new Browser(driver)
 
 
   val publicationDate = {
@@ -66,6 +65,7 @@ object Application extends Controller {
   }
 
   def getFeed() = Action {
+    val browser = new Browser(driver)
     Ok(Json.prettyPrint(Json.toJson(fetchFeed(browser))))
   }
 }
