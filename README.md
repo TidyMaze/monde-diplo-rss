@@ -43,3 +43,7 @@ I only store an in-memory cache of articles. **Absolutely nothing is stored conc
 ### Can I get LMD for free ?
 
 No, you need valid credentials to get this RSS feed. Credentials are checked every time.
+
+### Does it work with english version ?
+
+Not yet, only the main (french) one.

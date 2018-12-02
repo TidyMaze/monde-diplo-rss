@@ -1,4 +1,4 @@
-name := """play-getting-started"""
+name := """monde-diplo-rss"""
 
 version := "1.0-SNAPSHOT"
 
