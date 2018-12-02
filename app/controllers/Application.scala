@@ -2,18 +2,35 @@ package controllers
 
 import java.util.Calendar
 
-import net.ruippeixotog.scalascraper.browser.JsoupBrowser
+import com.gargoylesoftware.htmlunit.{ BrowserVersion, WebClient }
 import play.api.mvc._
-import net.ruippeixotog.scalascraper.dsl.DSL._
-import net.ruippeixotog.scalascraper.dsl.DSL.Extract._
-import net.ruippeixotog.scalascraper.dsl.DSL.Parse._
 import play.api.libs.json.Json
+import com.markatta.scalenium._
+import org.openqa.selenium.htmlunit.HtmlUnitDriver
+import play.api.Logger
 
 case class PublicationDate(year: Int, month: Int)
 
+class CustomHtmlUnitDriver extends HtmlUnitDriver {
+  override def modifyWebClient(client: WebClient): WebClient = {
+    val modifiedClient = super.modifyWebClient(client)
+    modifiedClient.getOptions.setThrowExceptionOnScriptError(false)
+    modifiedClient
+  }
+}
+
+case class ArticleLink(url: String, text: String)
+object ArticleLink {
+  implicit val fmt = Json.format[ArticleLink]
+}
+
 object Application extends Controller {
 
-  val browser = JsoupBrowser()
+  private val driver = new CustomHtmlUnitDriver
+  driver.setJavascriptEnabled(true)
+  val browser = new Browser(driver)
+
+
   val publicationDate = {
     val today = Calendar.getInstance()
     PublicationDate(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1)
@@ -26,18 +43,29 @@ object Application extends Controller {
     Ok(views.html.index(null))
   }
 
-  def fetchFeed() = {
-    val doc = browser.get(articlesUrl(publicationDate))
-    val titles = doc >> elementList(s"""a[href^="/${publicationDate.year}/${publicationDate.month}"]""")
-    val validatedTitles = titles.filter(el => el.attr("href").matches(s"/${publicationDate.year}/${publicationDate.month}/[A-Za-z]+/\\d+"))
+  def fetchFeed(browser: Browser) = {
+    val doc: browser.type = {
+      val destination = articlesUrl(publicationDate)
+      println(s"Go to $destination")
+      browser.goTo(destination)
+    }
+    val titles = doc.find(s"""a[href^="/${publicationDate.year}/${publicationDate.month}"]""")
+
+    val validatedTitles = titles.filter(el =>
+      el("href").matches(s"$url/${publicationDate.year}/${publicationDate.month}/[A-Za-z]+/\\d+")
+    )
+
     validatedTitles
-      .map(el => (el.attr("href"), (el >?> element("h3") ).flatMap(_ >?> allText)))
+      .map(el => (
+        Some(el("href")),
+        el.find("h3").flatMap(v=>Option(v.text))
+      ))
       .collect {
-        case (link, Some(_)) => url ++ link
+        case (Some(link), texts) if texts.nonEmpty => ArticleLink(link, texts.mkString("\n"))
       }
   }
 
   def getFeed() = Action {
-    Ok(Json.prettyPrint(Json.toJson(fetchFeed())))
+    Ok(Json.prettyPrint(Json.toJson(fetchFeed(browser))))
   }
 }
