@@ -9,7 +9,9 @@ import com.markatta.scalenium._
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import play.api.Logger
 
-case class PublicationDate(year: Int, month: Int)
+case class PublicationDate(year: Int, month: Int) {
+  def getDatePath(): String = s"/$year/$month"
+}
 
 class CustomHtmlUnitDriver extends HtmlUnitDriver {
   override def modifyWebClient(client: WebClient): WebClient = {
@@ -36,7 +38,7 @@ object Application extends Controller {
   }
 
   val url = "https://www.monde-diplomatique.fr"
-  def articlesUrl(publication: PublicationDate): String = s"$url/${publicationDate.year}/${publicationDate.month}/"
+  def articlesUrl(publication: PublicationDate): String = s"$url${publicationDate.getDatePath()}/"
 
   def index = Action {
     Ok(views.html.index(null))
@@ -48,15 +50,15 @@ object Application extends Controller {
       println(s"Go to $destination")
       browser.goTo(destination)
     }
-    val titles = doc.find(s"""a[href^="/${publicationDate.year}/${publicationDate.month}"]""")
+    val titles = doc.find(s"""a[href^="${publicationDate.getDatePath()}"]""")
 
     val validatedTitles = titles.filter(el =>
-      el("href").matches(s"$url/${publicationDate.year}/${publicationDate.month}/[A-Za-z]+/\\d+")
+      el("href").matches(s"$url${publicationDate.getDatePath()}/[A-Za-z]+/\\d+")
     )
 
     validatedTitles
       .map(el => (
-        Some(el("href")),
+        Option(el("href")),
         el.find("h3").flatMap(v=>Option(v.text))
       ))
       .collect {
