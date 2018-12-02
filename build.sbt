@@ -16,7 +16,8 @@ libraryDependencies ++= Seq(
   cache,
   "org.postgresql" % "postgresql" % "9.4-1201-jdbc41",
   ws,
-  "com.markatta" %% "scalenium" % "1.0.3"
+  "com.markatta" %% "scalenium" % "1.0.3",
+  "com.rometools" % "rome" % "1.11.1"
 )
 
 libraryDependencies <+= scalaVersion("org.scala-lang" % "scala-compiler" % _ )

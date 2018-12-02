@@ -8,7 +8,10 @@ import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
+import com.rometools.rome.feed.synd._
+import com.rometools.rome.io.SyndFeedOutput
 
+import scala.collection.JavaConversions._
 import scala.util.{ Failure, Success, Try }
 
 case class PublicationDate(year: Int, month: Int) {
@@ -80,6 +83,30 @@ object Application extends Controller {
       Article(articleLink.url, articleLink.title, page.find("""div[class*="article-texte-"] p""").map(_.text))
     )
 
+  def articleToEntry(syndFeed: SyndFeed)(article: Article): SyndEntry = {
+    val entry = new SyndEntryImpl()
+    entry.setUri(article.url)
+    entry.setLink(article.url)
+    entry.setSource(syndFeed)
+    entry.setTitle(article.title)
+    val content = new SyndContentImpl()
+    content.setType("text/plain")
+    content.setValue(article.content.mkString("\n"))
+    entry.setContents(Seq(content))
+    entry
+  }
+
+  def articlesToFeed(articles: Seq[Article]) = {
+    val feed = new SyndFeedImpl
+    feed.setFeedType("rss_2.0")
+    feed.setTitle("Le Monde Diplomatique")
+    feed.setDescription("Read full articles from Le Monde Diplomatique.")
+    feed.setLink("https://monde-diplo-rss.herokuapp.com")
+    feed.setEntries(articles.map(articleToEntry(feed)))
+    new SyndFeedOutput().outputString(feed)
+  }
+
+
   def getFeed(email: String, password: String) = Action {
     implicit val browser = new Browser(driver)
 
@@ -94,8 +121,9 @@ object Application extends Controller {
           }
         })
       )
+      .map(articlesToFeed)
     maybeOutput match {
-      case Success(output) => Ok(Json.prettyPrint(Json.toJson(output)))
+      case Success(output) => Ok(output)
       case Failure(ex) => InternalServerError(ex.getMessage)
     }
 
