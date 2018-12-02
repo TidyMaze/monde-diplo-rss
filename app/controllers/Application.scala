@@ -12,6 +12,7 @@ import com.rometools.rome.feed.synd._
 import com.rometools.rome.io.SyndFeedOutput
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable
 import scala.util.{ Failure, Success, Try }
 
 case class PublicationDate(year: Int, month: Int) {
@@ -38,6 +39,8 @@ object Article {
 }
 
 object Application extends Controller {
+
+  val articlesCache = mutable.Map.empty[String, Article]
 
   private val driver = new CustomHtmlUnitDriver
   driver.setJavascriptEnabled(true)
@@ -83,6 +86,19 @@ object Application extends Controller {
       Article(articleLink.url, articleLink.title, page.find("""div[class*="article-texte-"] p""").map(_.text))
     )
 
+  def fetchArticleContentCached(articleLink: ArticleLink)(implicit browser: Browser): Try[Article] =
+    articlesCache.get(articleLink.url) match {
+      case Some(article) => {
+        Logger.debug(s"Cache hit for ${articleLink.url}")
+        Success(article)
+      }
+      case None => fetchArticleContent(articleLink).map(article => {
+        articlesCache.put(articleLink.url, article)
+        article
+      })
+    }
+
+
   def articleToEntry(syndFeed: SyndFeed)(article: Article): SyndEntry = {
     val entry = new SyndEntryImpl()
     entry.setUri(article.url)
@@ -113,7 +129,7 @@ object Application extends Controller {
     val maybeOutput = login(email, password)
       .map(_ => fetchFeed())
       .map(allArticles =>
-        allArticles.map(fetchArticleContent).foldLeft(Seq.empty[Article])({
+        allArticles.map(fetchArticleContentCached).foldLeft(Seq.empty[Article])({
           case (acc, Success(article)) => article +: acc
           case (acc, Failure(ex)) => {
             Logger.error("Article fetching error: ", ex)
