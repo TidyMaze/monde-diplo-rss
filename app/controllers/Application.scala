@@ -44,10 +44,6 @@ object Application extends Controller {
 
   val articlesCache = mutable.Map.empty[String, Article]
 
-  private val driver = new CustomHtmlUnitDriver
-  driver.setJavascriptEnabled(true)
-
-
   val publicationDate = {
     val today = Calendar.getInstance()
     PublicationDate(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1)
@@ -126,6 +122,9 @@ object Application extends Controller {
 
 
   def getFeed(email: String, password: String) = Action {
+    val driver = new CustomHtmlUnitDriver
+    driver.setJavascriptEnabled(true)
+
     implicit val browser = new Browser(driver)
 
     val maybeOutput = login(email, password)
