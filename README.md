@@ -1,37 +1,45 @@
-# scala/play-getting-started
+# Le Monde Diplomatique RSS Feed
 
-A barebones Scala app (using the Play framework), which can easily be deployed to Heroku.  
+This service serves [Le Monde Diplomatique](https://www.monde-diplomatique.fr/) (LMD) as a RSS feed. Each item contains the full article (and not only a summary).
 
-This application support the [Getting Started with Scala/Play on Heroku](https://devcenter.heroku.com/articles/getting-started-with-scala) article - check it out.
+## Show me the stuff
 
-## Running Locally
-
-Make sure you have Play and sbt installed.  Also, install the [Heroku Toolbelt](https://toolbelt.heroku.com/).
-
-```sh
-$ git clone https://github.com/heroku/scala-getting-started.git
-$ cd scala-getting-started
-$ sbt compile stage
-$ heroku local
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Le Monde Diplomatique</title>
+    <link>https://monde-diplo-rss.herokuapp.com</link>
+    <description>Read full articles from Le Monde Diplomatique.</description>
+    <item>
+      <title>Les guetteurs d’inconnu</title>
+      <link>https://www.monde-diplomatique.fr/2018/12/PIEILLER/59334</link>
+      <description>En 1821, pour la première fois dans le monde, est fondée une Société de géographie ; et c’est dans la France de la Restauration, étouffante et pleine de désirs d’autres cieux. Une vingtaine d’années plus tard, les chercheurs d’horizons lointains vont avoir à leur disposition, pour les fixer, une toute nouvelle technique : la photographie. Explorateurs, voyageurs, ingénieurs de toutes nationalités vont alors, chacun à sa façon, dans le cadre d’expéditions le plus souvent scientifiques ou militaires, mettre en scène l’inconnu. Ils arpentent les colonies, ils avancent sur des terres peu répertoriées, ils prennent des clichés de paysages ignorés de leurs concitoyens, rendent visibles leurs habitants, mais aussi accompagnent les métamorphoses de lieux familiers saisis par la modernisation industrielle. Prises par diverses expéditions, scientifiques ou militaires pour l’essentiel, menées entre 1850 et 1914 et conservées par la Société de géographie (1), certaines de ces images ont contribué à nourrir l’imaginaire colonial ; d’autres ont su rendre l’ampleur de prouesses techniques ; d’autres, enfin, célèbrent des paysages immémoriaux. Mais, des vertiges des canyons du Colorado aux taureaux ailés de Ninive, des Indiens de l’Orénoque à la construction du canal de Panama, toutes sont saisissantes.</description>
+      <source>Le Monde Diplomatique</source>
+      <guid isPermaLink="false">https://www.monde-diplomatique.fr/2018/12/PIEILLER/59334</guid>
+    </item>
+  </channel>
+</rss>
 ```
 
-Your app should now be running on [localhost:5000](http://localhost:5000/).
+## How to use
 
-## Deploying to Heroku
-
-```sh
-$ heroku create
-$ git push heroku master
-$ heroku open
+```http request
+GET https://monde-diplo-rss.herokuapp.com/feed?email=<email>&password=<password>
 ```
 
-or
+With `email` and `password` url-encoded.
 
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.png)](https://heroku.com/deploy)
+## Questions
 
-## Documentation
+### Why build this, LMD already has a [RSS Feed](https://www.monde-diplomatique.fr/recents.xml) ?
 
-For more information about using Play and Scala on Heroku, see these Dev Center articles:
+Yup, but its feeds contains only shortened articles (`Hello World (...)`), even for users with full subscription.
 
-- [Play and Scala on Heroku](https://devcenter.heroku.com/categories/language-support#scala-and-play)
+### Do you store data ?
 
+I only store an in-memory cache of articles. **Absolutely nothing is stored concerning your credentials** (they are known at the beginning of the HTTP call and forgotten right after).
+
+### Can I get LMD for free ?
+
+No, you need valid credentials to get this RSS feed. Credentials are checked every time.
