@@ -1,6 +1,7 @@
 package controllers
 
-import java.util.Calendar
+import java.time.{Instant, LocalDate, ZoneOffset}
+import java.util.{Calendar, Date}
 
 import com.gargoylesoftware.htmlunit.WebClient
 import com.markatta.scalenium._
@@ -13,7 +14,8 @@ import com.rometools.rome.io.SyndFeedOutput
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
-import scala.util.{ Failure, Success, Try }
+import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
 
 case class PublicationDate(year: Int, month: Int) {
   def getDatePath(): String = s"/$year/$month"
@@ -30,7 +32,7 @@ class CustomHtmlUnitDriver extends HtmlUnitDriver {
 }
 
 case class ArticleLink(url: String, title: String)
-case class Article(url: String, title: String, content: Seq[String])
+case class Article(url: String, title: String, content: Seq[String], publishedAt: Instant)
 
 object ArticleLink {
   implicit val fmt = Json.format[ArticleLink]
@@ -71,7 +73,7 @@ object Application extends Controller {
     browser.goTo(url)
   }
 
-  def fetchFeed()(implicit browser: Browser) = goTo(articlesUrl(publicationDate))
+  def fetchFeed()(implicit browser: Browser): Seq[ArticleLink] = goTo(articlesUrl(publicationDate))
     .find(s"""a[href^="${publicationDate.getDatePath()}"]""")
     .filter(el => el("href").matches(s"$url${publicationDate.getDatePath()}/[A-Za-z]+/\\d+"))
     .map(el => (Option(el("href")), el.find("h3").flatMap(v=>Option(v.text))))
@@ -80,9 +82,21 @@ object Application extends Controller {
     }
 
   def fetchArticleContent(articleLink: ArticleLink)(implicit browser: Browser): Try[Article] =
-    Try(goTo(articleLink.url)).map(page =>
-      Article(articleLink.url, articleLink.title, page.find("""div[class*="article-texte-"] p""").map(_.text))
-    )
+    Try(goTo(articleLink.url)).map(page => {
+
+      val regexYearMonth: Regex = """.*/(\d+)/(\d+)/""".r
+
+      val (year, month) = page.first("""#entete > div.ariane > div.fil > a.filin""").map(_ ("href")).get match {
+        case regexYearMonth(y, m) => (y, m)
+      }
+
+      Article(
+        articleLink.url,
+        articleLink.title,
+        page.find("""div[class*="article-texte-"] p""").map(_.text),
+        LocalDate.of(year.toInt, month.toInt, 1).atStartOfDay().toInstant(ZoneOffset.UTC)
+      )
+    })
 
   def fetchArticleContentCached(articleLink: ArticleLink)(implicit browser: Browser): Try[Article] =
     articlesCache.get(articleLink.url) match {
@@ -103,6 +117,9 @@ object Application extends Controller {
     entry.setLink(article.url)
     entry.setSource(syndFeed)
     entry.setTitle(article.title)
+    entry.setPublishedDate(Date.from(article.publishedAt))
+    entry.setUpdatedDate(Date.from(article.publishedAt))
+
     val content = new SyndContentImpl()
     content.setType("text/plain")
     content.setValue(article.content.mkString("\n"))
@@ -146,3 +163,4 @@ object Application extends Controller {
 
   }
 }
+
