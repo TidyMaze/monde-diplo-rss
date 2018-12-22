@@ -144,6 +144,19 @@ object Application extends Controller {
     feed.setDescription("Read full articles from Le Monde Diplomatique.")
     feed.setLink("https://monde-diplo-rss.herokuapp.com")
     feed.setEntries(articles.map(articleToEntry(feed)))
+    feed.setGenerator("https://mvnrepository.com/artifact/com.rometools/rome/1.11.1")
+    feed.setAuthor("Le Monde Diplomatique")
+    feed.setLanguage("fr")
+    feed.setWebMaster("groskiff@gmail.com")
+    feed.setImage({
+      val syndImage = new SyndImageImpl()
+      syndImage.setDescription("Le Monde Diplomatique logo")
+      syndImage.setUrl(
+        "https://scontent-cdg2-1.xx.fbcdn.net/v/t1.0-9/19366383_10154447835886688_7934159369719786657_n.png?_nc_cat=1&_nc_ht=scontent-cdg2-1.xx&oh=51499099e8e5c73b4d7ba3eaa6847498&oe=5C9ADEA3"
+      )
+      syndImage.setTitle("Le Monde Diplomatique")
+      syndImage
+    })
     new SyndFeedOutput().outputString(feed)
   }
 
