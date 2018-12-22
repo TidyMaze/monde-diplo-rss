@@ -53,6 +53,9 @@ object Application extends Controller {
   implicit val articlesCache: GuavaCache[Article] =
     GuavaCache(CacheBuilder.newBuilder().expireAfterAccess(java.time.Duration.ofNanos(7.days.toNanos)).build[String, Entry[Article]])
 
+  implicit val feedCache: GuavaCache[Seq[ArticleLink]] =
+    GuavaCache(CacheBuilder.newBuilder().expireAfterAccess(java.time.Duration.ofNanos(7.days.toNanos)).build[String, Entry[Seq[ArticleLink]]])
+
   val publicationDate = {
     val today = Calendar.getInstance()
     PublicationDate(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1)
@@ -80,7 +83,7 @@ object Application extends Controller {
     browser.goTo(url)
   }
 
-  def fetchFeed()(implicit browser: Browser): Seq[ArticleLink] = goTo(articlesUrl(publicationDate))
+  def fetchFeed(publicationDate: PublicationDate)(implicit browser: Browser): Seq[ArticleLink] = goTo(articlesUrl(publicationDate))
     .find(s"""a[href^="${publicationDate.getDatePath()}"]""")
     .filter(el => el("href").matches(s"$url${publicationDate.getDatePath()}/[A-Za-z]+/\\d+"))
     .map(el => (Option(el("href")), el.find("h3").flatMap(v=>Option(v.text))))
@@ -107,12 +110,8 @@ object Application extends Controller {
 
   def fetchArticleContentCached(articleLink: ArticleLink)(implicit browser: Browser): Try[Article] =
     articlesCache.get(articleLink.url) match {
-      case Some(article) => {
-        Logger.debug(s"Cache hit for ${articleLink.url}")
-        Success(article)
-      }
+      case Some(article) => Success(article)
       case None =>
-        Logger.debug(s"Cache miss for ${articleLink.url}")
         fetchArticleContent(articleLink)
           .map(article => {
             articlesCache.put(articleLink.url)(article)
@@ -155,7 +154,11 @@ object Application extends Controller {
     implicit val browser = new Browser(driver)
 
     val maybeOutput = login(email, password)
-      .map(_ => fetchFeed())
+      .map(_ => {
+        feedCache.caching(publicationDate.getDatePath())()(
+          fetchFeed(publicationDate)
+        )
+      })
       .map(allArticles =>
         allArticles.map(fetchArticleContentCached).foldLeft(Seq.empty[Article])({
           case (acc, Success(article)) => article +: acc
