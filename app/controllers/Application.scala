@@ -4,6 +4,7 @@ import java.time.{Instant, LocalDate, ZoneOffset}
 import java.util.{Calendar, Date}
 
 import com.gargoylesoftware.htmlunit.WebClient
+import com.google.common.cache.CacheBuilder
 import com.markatta.scalenium._
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import play.api.Logger
@@ -16,6 +17,11 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable
 import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
+import scalacache._
+import scalacache.guava._
+import scala.concurrent.duration._
+
+import scalacache.modes.sync._
 
 case class PublicationDate(year: Int, month: Int) {
   def getDatePath(): String = s"/$year/$month"
@@ -44,7 +50,8 @@ object Article {
 
 object Application extends Controller {
 
-  val articlesCache = mutable.Map.empty[String, Article]
+  implicit val articlesCache: GuavaCache[Article] =
+    GuavaCache(CacheBuilder.newBuilder().expireAfterAccess(java.time.Duration.ofNanos(7.days.toNanos)).build[String, Entry[Article]])
 
   val publicationDate = {
     val today = Calendar.getInstance()
@@ -108,7 +115,7 @@ object Application extends Controller {
         Logger.debug(s"Cache miss for ${articleLink.url}")
         fetchArticleContent(articleLink)
           .map(article => {
-            articlesCache.put(articleLink.url, article)
+            articlesCache.put(articleLink.url)(article)
             article
           })
     }
