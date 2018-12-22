@@ -130,8 +130,8 @@ object Application extends Controller {
     entry.setUpdatedDate(Date.from(article.publishedAt))
 
     val content = new SyndContentImpl()
-    content.setType("text/plain")
-    content.setValue(article.content.mkString("\n"))
+    content.setType("text/xml")
+    content.setValue(s"<![CDATA[ ${article.content.mkString("<br/>")} ]]>")
     entry.setDescription(content)
     entry
   }
