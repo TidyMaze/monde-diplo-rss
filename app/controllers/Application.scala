@@ -104,10 +104,13 @@ object Application extends Controller {
         Logger.debug(s"Cache hit for ${articleLink.url}")
         Success(article)
       }
-      case None => fetchArticleContent(articleLink).map(article => {
-        articlesCache.put(articleLink.url, article)
-        article
-      })
+      case None =>
+        Logger.debug(s"Cache miss for ${articleLink.url}")
+        fetchArticleContent(articleLink)
+          .map(article => {
+            articlesCache.put(articleLink.url, article)
+            article
+          })
     }
 
 
