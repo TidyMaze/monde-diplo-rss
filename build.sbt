@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   ws,
   "com.markatta" %% "scalenium" % "1.0.3",
   "com.rometools" % "rome" % "1.11.1",
+  "com.rometools" % "rome-modules" % "1.11.1",
   "com.github.cb372" %% "scalacache-core" % "0.27.0",
   "com.github.cb372" %% "scalacache-guava" % "0.27.0"
 )

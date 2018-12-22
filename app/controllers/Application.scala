@@ -6,6 +6,8 @@ import java.util.{Calendar, Date}
 import com.gargoylesoftware.htmlunit.WebClient
 import com.google.common.cache.CacheBuilder
 import com.markatta.scalenium._
+import com.rometools.modules.content.{ContentModule, ContentModuleImpl}
+import com.rometools.rome.feed.module.Module
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import play.api.Logger
 import play.api.libs.json.Json
@@ -19,8 +21,8 @@ import scala.util.matching.Regex
 import scala.util.{Failure, Success, Try}
 import scalacache._
 import scalacache.guava._
-import scala.concurrent.duration._
 
+import scala.concurrent.duration._
 import scalacache.modes.sync._
 
 case class PublicationDate(year: Int, month: Int) {
@@ -129,10 +131,9 @@ object Application extends Controller {
     entry.setPublishedDate(Date.from(article.publishedAt))
     entry.setUpdatedDate(Date.from(article.publishedAt))
 
-    val content = new SyndContentImpl()
-    content.setType("text/xml")
-    content.setValue(s"<![CDATA[ ${article.content.mkString("<br/>")} ]]>")
-    entry.setDescription(content)
+    val contentModule: ContentModule = new ContentModuleImpl()
+    contentModule.setEncodeds(List(article.content.map(p => s"<p>$p</p>").mkString("\n")))
+    entry.getModules.add(contentModule)
     entry
   }
 
@@ -171,7 +172,7 @@ object Application extends Controller {
       .map(articlesToFeed)
     maybeOutput match {
       case Success(output) => Ok(output).as("application/rss+xml; charset=utf-8")
-      case Failure(ex) => InternalServerError(ex.getMessage)
+      case Failure(ex) => throw ex
     }
 
   }
