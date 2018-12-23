@@ -137,7 +137,7 @@ object Application extends Controller {
     entry
   }
 
-  def articlesToFeed(articles: Seq[Article]) = {
+  def articlesToFeed(articles: Seq[Article]): SyndFeed = {
     val feed = new SyndFeedImpl
     feed.setFeedType("rss_2.0")
     feed.setTitle("Le Monde Diplomatique")
@@ -157,7 +157,7 @@ object Application extends Controller {
       syndImage.setTitle("Le Monde Diplomatique")
       syndImage
     })
-    new SyndFeedOutput().outputString(feed)
+    feed
   }
 
 
@@ -182,7 +182,7 @@ object Application extends Controller {
           }
         })
       )
-      .map(articlesToFeed)
+      .map(((f:SyndFeed) => new SyndFeedOutput().outputString(f)) compose articlesToFeed)
     maybeOutput match {
       case Success(output) => Ok(output).as("application/rss+xml; charset=utf-8")
       case Failure(ex) => throw ex
