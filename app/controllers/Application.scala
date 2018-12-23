@@ -129,7 +129,7 @@ object Application extends Controller {
     entry.setSource(syndFeed)
     entry.setTitle(article.title)
     entry.setPublishedDate(Date.from(article.publishedAt))
-    entry.setUpdatedDate(Date.from(article.publishedAt))
+    entry.setUpdatedDate(Date.from(Instant.now()))
 
     val contentModule: ContentModule = new ContentModuleImpl()
     contentModule.setEncodeds(List(article.content.map(p => s"<p>$p</p>").mkString("\n")))
@@ -139,6 +139,7 @@ object Application extends Controller {
 
   def articlesToFeed(articles: Seq[Article]): SyndFeed = {
     val feed = new SyndFeedImpl
+    feed.setPublishedDate(Date.from(Instant.now()))
     feed.setFeedType("rss_2.0")
     feed.setTitle("Le Monde Diplomatique")
     feed.setDescription("Read full articles from Le Monde Diplomatique.")
