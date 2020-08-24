@@ -26,7 +26,7 @@ import scala.concurrent.duration._
 import scalacache.modes.sync._
 
 case class PublicationDate(year: Int, month: Int) {
-  def getDatePath(): String = s"/$year/$month"
+  def getDatePath(): String = s"/$year/" + String.format("%02d", month)
 }
 
 class CustomHtmlUnitDriver extends HtmlUnitDriver {
