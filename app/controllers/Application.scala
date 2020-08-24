@@ -7,26 +7,23 @@ import com.gargoylesoftware.htmlunit.WebClient
 import com.google.common.cache.CacheBuilder
 import com.markatta.scalenium._
 import com.rometools.modules.content.{ContentModule, ContentModuleImpl}
-import com.rometools.rome.feed.module.Module
+import com.rometools.rome.feed.synd._
+import com.rometools.rome.io.SyndFeedOutput
 import org.openqa.selenium.htmlunit.HtmlUnitDriver
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc._
-import com.rometools.rome.feed.synd._
-import com.rometools.rome.io.SyndFeedOutput
-
-import scala.collection.JavaConversions._
-import scala.collection.mutable
-import scala.util.matching.Regex
-import scala.util.{Failure, Success, Try}
 import scalacache._
 import scalacache.guava._
-
-import scala.concurrent.duration._
 import scalacache.modes.sync._
 
+import scala.collection.JavaConversions._
+import scala.concurrent.duration._
+import scala.util.matching.Regex
+import scala.util.{Failure, Success, Try}
+
 case class PublicationDate(year: Int, month: Int) {
-  def getDatePath(): String = s"/$year/" + String.format("%02d", month)
+  def getDatePath(): String = f"/$year%d/$month%02d"
 }
 
 class CustomHtmlUnitDriver extends HtmlUnitDriver {
