@@ -75,7 +75,7 @@ object Application extends Controller {
     browser.first("""input[name="valider"]""").get.click()
     browser.first("div.statut_abo.argumentaire")
       .flatMap(e => Option(e.text)) match {
-      case Some("Vous êtes abonné(e) à l’édition imprimée et aux archives du Monde diplomatique.") => Success(email)
+      case Some(text) if text.contains("Vous êtes abonné(e) à") => Success(email)
       case _ => Failure(new RuntimeException(s"Couldn't do login for user `$email` with password `${password.map(_ => '*')}`"))
     }
   }
